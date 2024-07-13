@@ -1,6 +1,6 @@
 // client.js (ou tout autre fichier client)
 const io = require('socket.io-client');
-const SERVER_URL = 'http://localhost:8000'; // URL de votre serveur Socket.IO
+const SERVER_URL = 'http://localhost:8080'; // URL de votre serveur Socket.IO
 
 const socket = io(SERVER_URL);
 

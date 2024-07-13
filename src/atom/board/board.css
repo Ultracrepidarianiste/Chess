@@ -1,12 +1,11 @@
-/* src/Template/board.css */
 .board {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin: 20px auto;
-  width: 320px;
-  height: 320px;
-  border: 2px solid #000;
+  width: 400px; /* Ajustez la largeur selon vos besoins */
+  border: 2px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 20px;
 }
 
 .row {
@@ -14,23 +13,21 @@
 }
 
 .square {
-  width: 40px;
-  height: 40px;
-  position: relative;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  background-color: #f0d9b5; /* Couleur de fond par défaut pour les cases blanches */
 }
 
-.square img {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
+.black {
+  background-color: #b58863; /* Couleur de fond pour les cases noires */
+  color: #fff; /* Texte blanc pour les cases noires */
 }
 
-.square.black {
-  background-color: #000;
-}
-
-.square.white {
-  background-color: #fff;
+.square-number {
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.5); /* Couleur du numéro de case */
 }

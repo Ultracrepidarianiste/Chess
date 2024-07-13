@@ -25,7 +25,7 @@ io.on('connection', (socket) => {
 });
 
 // Démarrage du serveur
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Serveur Socket.IO démarré sur le port ${PORT}`);
 });

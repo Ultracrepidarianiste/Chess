@@ -45,86 +45,78 @@ app.delete("/reset-pieces", (req, res) => {
 
 app.post("/save-pieces", (req, res) => {
     const { primaryColor, secondaryColor } = req.body;
-
-    // Exemple d'identifiants d'utilisateur récupérés (à remplacer par votre propre logique)
+  
     const userId1 = 1; // ID de l'utilisateur 1
     const userId2 = 2; // ID de l'utilisateur 2
-
+  
     const pieceTypes = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'];
-
-    // Promesse globale pour gérer l'ensemble des opérations asynchrones
+  
     const savePiecesPromise = new Promise((resolve, reject) => {
-        // Utilisation d'un tableau pour stocker les promesses des requêtes SQL
-        const queries = [];
-
-        pieceTypes.forEach(type => {
-            // Création d'une promesse pour chaque type de pièce
-            const promise = new Promise((resolve, reject) => {
+      const queries = [];
+  
+      pieceTypes.forEach((type, index) => { // Ajouter l'index pour la position
+        const promise = new Promise((resolve, reject) => {
+          db.query(
+            "INSERT INTO pieces (Type) VALUES (?)",
+            [type],
+            (error, result) => {
+              if (error) {
+                console.error(error);
+                reject("Erreur lors de la création des pièces");
+              } else {
+                const pieceId = result.insertId;
+                const position = index; // Position de la pièce sur le plateau
+  
                 db.query(
-                    "INSERT INTO pieces (Type) VALUES (?)",
-                    [type],
-                    (error, result) => {
-                        if (error) {
+                  "INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position) VALUES (?, ?, ?, ?, ?)",
+                  [userId1, pieceId, primaryColor+"/"+secondaryColor, 'alive', position],
+                  (error) => {
+                    if (error) {
+                      console.error(error);
+                      reject("Erreur lors de la création des user-pieces");
+                    } else {
+                      db.query(
+                        "INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position) VALUES (?, ?, ?, ?, ?)",
+                        [userId2, pieceId, primaryColor+"/"+secondaryColor, 'alive', position + 8], // Pour le deuxième utilisateur, position ajustée
+                        (error) => {
+                          if (error) {
                             console.error(error);
-                            reject("Erreur lors de la création des pièces");
-                        } else {
-                            const pieceId = result.insertId;
-
-                            // Insérer pour le premier utilisateur
-                            db.query(
-                                "INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status) VALUES (?, ?, ?, ?)",
-                                [userId1, pieceId, primaryColor, 'alive'],
-                                (error) => {
-                                    if (error) {
-                                        console.error(error);
-                                        reject("Erreur lors de la création des user-pieces");
-                                    } else {
-                                        resolve(`Pièce ${type} enregistrée avec succès pour l'utilisateur 1`);
-                                    }
-                                }
-                            );
-
-                            // Insérer pour le deuxième utilisateur
-                            db.query(
-                                "INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status) VALUES (?, ?, ?, ?)",
-                                [userId2, pieceId, primaryColor, 'alive'],
-                                (error) => {
-                                    if (error) {
-                                        console.error(error);
-                                        reject("Erreur lors de la création des user-pieces");
-                                    } else {
-                                        resolve(`Pièce ${type} enregistrée avec succès pour l'utilisateur 2`);
-                                    }
-                                }
-                            );
+                            reject("Erreur lors de la création des user-pieces");
+                          } else {
+                            resolve(`Pièce ${type} enregistrée avec succès pour les utilisateurs`);
+                          }
                         }
+                      );
                     }
+                  }
                 );
-            });
-
-            queries.push(promise);
+              }
+            }
+          );
         });
-
-        // Attente de toutes les requêtes pour les exécuter en parallèle
-        Promise.all(queries)
-            .then(successMessages => {
-                resolve(successMessages.join(", "));
-            })
-            .catch(error => {
-                reject(error);
-            });
+  
+        queries.push(promise);
+      });
+  
+      Promise.all(queries)
+        .then(successMessages => {
+          resolve(successMessages.join(", "));
+        })
+        .catch(error => {
+          reject(error);
+        });
     });
-
-    // Exécution de la promesse globale et envoi de la réponse
+  
     savePiecesPromise
-    .then(successMessage => {
-        res.status(200).send(JSON.stringify(successMessage)); // Assurez-vous que successMessage est en JSON
-    })
-    .catch(error => {
+      .then(successMessage => {
+        res.status(200).send(JSON.stringify(successMessage));
+      })
+      .catch(error => {
         console.error(error);
         res.status(500).send("Erreur lors de l'enregistrement des pièces");
-    });
-});
+      });
+  });
+  
 
 app.listen(port, () => {
     console.log(`Serveur démarré sur http://localhost:${port}`);

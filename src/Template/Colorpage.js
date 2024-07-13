@@ -100,7 +100,7 @@ const ColorPage = () => {
         .catch(error => {
             console.error('Erreur:', error);
         });
-  };
+};
 
 
   return (
