@@ -1,0 +1,15 @@
+{
+  "name": "api-node",
+  "version": "1.0.0",
+  "description": "Test de création d'une API pour le CDEV Camp",
+  "main": "index.js",
+  "author": "Audrey",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mysql": "^2.18.1",
+    "nodemon": "^3.1.4",
+    "socket.io": "^4.7.5"
+  }
+}
