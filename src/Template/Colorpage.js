@@ -1,3 +1,5 @@
+// ../../Template/Colorpage.js
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Colorpage.css';
@@ -8,9 +10,65 @@ import HorseSkin from '../Art/HorseSkin.png';
 import TowerSkin from '../Art/TowerSkin.png';
 import PionSkin from '../Art/PionSkin.png';
 
+// Fonction utilitaire pour convertir une couleur hexadécimale en RGB
+const hexToRgb = (hex) => {
+  const bigint = parseInt(hex.slice(1), 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+};
+
+// Fonction pour créer une image de pièce colorée
+export const createPieceImage = (src, alt, primaryColor, secondaryColor) => {
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <svg
+        width="100"
+        height="100"
+        viewBox="0 0 100 100"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          zIndex: -1,
+        }}
+      >
+        <filter id="colorize">
+          <feColorMatrix
+            type="matrix"
+            values={`0 0 0 0 ${hexToRgb(primaryColor).r / 255}
+                     0 0 0 0 ${hexToRgb(primaryColor).g / 255}
+                     0 0 0 0 ${hexToRgb(primaryColor).b / 255}
+                     0 0 0 1 0`}
+          />
+          <feDropShadow
+            dx="0"
+            dy="0"
+            stdDeviation="5"
+            floodColor={secondaryColor}
+            floodOpacity="0.8"
+          />
+        </filter>
+      </svg>
+      <img
+        src={src}
+        alt={alt}
+        style={{
+          filter: 'url(#colorize)',
+          zIndex: 0,
+          position: 'relative',
+        }}
+      />
+    </div>
+  );
+};
+
 const ColorPage = () => {
-  const [primaryColor, setPrimaryColor] = useState('#ffffff'); 
-  const [secondaryColor, setSecondaryColor] = useState('#A9A9AB'); 
+  const [primaryColor, setPrimaryColor] = useState('#ffffff');
+  const [secondaryColor, setSecondaryColor] = useState('#A9A9AB');
   const navigate = useNavigate();
 
   const handlePrimaryColorChange = (event) => {
@@ -21,87 +79,31 @@ const ColorPage = () => {
     setSecondaryColor(event.target.value);
   };
 
-  const createPieceImage = (src, alt) => {
-    return (
-      <div style={{ position: 'relative', display: 'inline-block' }}>
-        <svg
-          width="100"
-          height="100"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: -1,
-          }}
-        >
-          <filter id="colorize">
-            <feColorMatrix
-              type="matrix"
-              values={`0 0 0 0 ${hexToRgb(primaryColor).r / 255}
-                       0 0 0 0 ${hexToRgb(primaryColor).g / 255}
-                       0 0 0 0 ${hexToRgb(primaryColor).b / 255}
-                       0 0 0 1 0`}
-            />
-            <feDropShadow
-              dx="0"
-              dy="0"
-              stdDeviation="5"
-              floodColor={secondaryColor}
-              floodOpacity="0.8" // Augmentez l'opacité de l'ombre ici
-            />
-          </filter>
-        </svg>
-        <img
-          src={src}
-          alt={alt}
-          style={{
-            filter: 'url(#colorize)',
-            zIndex: 0,
-            position: 'relative',
-          }}
-        />
-      </div>
-    );
-  };
-
-  // Fonction utilitaire pour convertir une couleur hexadécimale en RGB
-  const hexToRgb = (hex) => {
-    const bigint = parseInt(hex.slice(1), 16);
-    return {
-      r: (bigint >> 16) & 255,
-      g: (bigint >> 8) & 255,
-      b: bigint & 255,
-    };
-  };
-
   const savePiecesAndNavigate = () => {
     const userId = 1; // Utilisez l'ID de l'utilisateur actuel ici
 
     fetch('http://localhost:8000/save-pieces', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, primaryColor, secondaryColor }),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, primaryColor, secondaryColor }),
     })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error('Erreur lors de l\'enregistrement des pièces');
-            }
-        })
-        .then(data => {
-            console.log('Pièces enregistrées avec succès:', data);
-            navigate('/board', { state: { primaryColor, secondaryColor } });
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-        });
-};
-
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error('Erreur lors de l\'enregistrement des pièces');
+        }
+      })
+      .then(data => {
+        console.log('Pièces enregistrées avec succès:', data);
+        navigate('/board', { state: { primaryColor, secondaryColor } });
+      })
+      .catch(error => {
+        console.error('Erreur:', error);
+      });
+  };
 
   return (
     <div className="color-page">
@@ -123,12 +125,12 @@ const ColorPage = () => {
         />
       </div>
       <div className="piece-preview">
-        {createPieceImage(KingSkin, "King")}
-        {createPieceImage(QueenSkin, "Queen")}
-        {createPieceImage(FouSkin, "Bishop")}
-        {createPieceImage(HorseSkin, "Knight")}
-        {createPieceImage(TowerSkin, "Rook")}
-        {createPieceImage(PionSkin, "Pawn")}
+        {createPieceImage(KingSkin, "King", primaryColor, secondaryColor)}
+        {createPieceImage(QueenSkin, "Queen", primaryColor, secondaryColor)}
+        {createPieceImage(FouSkin, "Bishop", primaryColor, secondaryColor)}
+        {createPieceImage(HorseSkin, "Knight", primaryColor, secondaryColor)}
+        {createPieceImage(TowerSkin, "Rook", primaryColor, secondaryColor)}
+        {createPieceImage(PionSkin, "Pawn", primaryColor, secondaryColor)}
       </div>
       <button
         className="play-button"

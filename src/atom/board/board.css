@@ -1,11 +1,8 @@
 .board {
   display: flex;
   flex-direction: column;
-  width: 400px; /* Ajustez la largeur selon vos besoins */
-  border: 2px solid #333;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 20px;
+  margin: auto;
+  width: 400px; /* Adjust based on your needs */
 }
 
 .row {
@@ -13,21 +10,36 @@
 }
 
 .square {
-  width: 50px;
-  height: 50px;
+  width: 50px; /* Adjust based on your needs */
+  height: 50px; /* Adjust based on your needs */
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 14px;
-  background-color: #f0d9b5; /* Couleur de fond par défaut pour les cases blanches */
+}
+
+.white {
+  background-color: #f0d9b5;
 }
 
 .black {
-  background-color: #b58863; /* Couleur de fond pour les cases noires */
-  color: #fff; /* Texte blanc pour les cases noires */
+  background-color: #b58863;
 }
 
-.square-number {
-  font-size: 10px;
-  color: rgba(0, 0, 0, 0.5); /* Couleur du numéro de case */
+.piece {
+  width: 40px; /* Adjust based on your needs */
+  height: 40px; /* Adjust based on your needs */
 }
+
+.reset-button {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.reset-button:hover {
+  background-color: #0056b3;
+}
+

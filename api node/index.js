@@ -1,3 +1,5 @@
+// index.js dans le dossier "api"
+
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql");
@@ -22,15 +24,14 @@ db.connect((error) => {
     console.log("Connexion à la BDD réussie");
 });
 
+// Endpoint pour réinitialiser les pièces
 app.delete("/reset-pieces", (req, res) => {
-    // Supprimer d'abord toutes les entrées dans la table `user-piece`
     db.query("DELETE FROM `user-piece`", (error, result) => {
         if (error) {
             console.error(error);
             res.status(500).send("Erreur lors de la suppression des user-piece");
             return;
         }
-        // Ensuite, supprimer toutes les pièces de la table `pieces`
         db.query("DELETE FROM pieces", (error, result) => {
             if (error) {
                 console.error(error);
@@ -42,19 +43,19 @@ app.delete("/reset-pieces", (req, res) => {
     });
 });
 
-
+// Endpoint pour sauvegarder les pièces
 app.post("/save-pieces", (req, res) => {
     const { primaryColor, secondaryColor } = req.body;
   
-    const userId1 = 1; // ID de l'utilisateur 1
-    const userId2 = 2; // ID de l'utilisateur 2
+    const userId1 = 1;
+    const userId2 = 2;
   
     const pieceTypes = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'];
   
     const savePiecesPromise = new Promise((resolve, reject) => {
       const queries = [];
   
-      pieceTypes.forEach((type, index) => { // Ajouter l'index pour la position
+      pieceTypes.forEach((type, index) => {
         const promise = new Promise((resolve, reject) => {
           db.query(
             "INSERT INTO pieces (Type) VALUES (?)",
@@ -65,7 +66,7 @@ app.post("/save-pieces", (req, res) => {
                 reject("Erreur lors de la création des pièces");
               } else {
                 const pieceId = result.insertId;
-                const position = index; // Position de la pièce sur le plateau
+                const position = index;
   
                 db.query(
                   "INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position) VALUES (?, ?, ?, ?, ?)",
@@ -77,7 +78,7 @@ app.post("/save-pieces", (req, res) => {
                     } else {
                       db.query(
                         "INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position) VALUES (?, ?, ?, ?, ?)",
-                        [userId2, pieceId, primaryColor+"/"+secondaryColor, 'alive', position + 8], // Pour le deuxième utilisateur, position ajustée
+                        [userId2, pieceId, primaryColor+"/"+secondaryColor, 'alive', position + 8],
                         (error) => {
                           if (error) {
                             console.error(error);
@@ -115,8 +116,19 @@ app.post("/save-pieces", (req, res) => {
         console.error(error);
         res.status(500).send("Erreur lors de l'enregistrement des pièces");
       });
+});
+
+// Ajout du nouvel endpoint pour obtenir les pièces
+app.get('/get-pieces', (req, res) => {
+  db.query('SELECT p.ID, p.Type, up.Color, up.Status, up.Position FROM pieces p JOIN `user-piece` up ON p.ID = up.Piece_ID', (error, results) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Erreur lors de la récupération des pièces');
+      return;
+    }
+    res.json(results);
   });
-  
+});
 
 app.listen(port, () => {
     console.log(`Serveur démarré sur http://localhost:${port}`);
