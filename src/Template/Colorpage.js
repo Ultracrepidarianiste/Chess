@@ -52,19 +52,17 @@ export const createPieceImage = (src, alt, primaryColor, secondaryColor) => {
             floodOpacity="0.8"
           />
         </filter>
+        <image
+          xlinkHref={src}
+          width="100"
+          height="100"
+          style={{ filter: 'url(#colorize)' }}
+        />
       </svg>
-      <img
-        src={src}
-        alt={alt}
-        style={{
-          filter: 'url(#colorize)',
-          zIndex: 0,
-          position: 'relative',
-        }}
-      />
     </div>
   );
 };
+
 
 const ColorPage = () => {
   const [primaryColor, setPrimaryColor] = useState('#ffffff');

@@ -43,80 +43,101 @@ app.delete("/reset-pieces", (req, res) => {
     });
 });
 
-// Endpoint pour sauvegarder les pièces
-app.post("/save-pieces", (req, res) => {
-    const { primaryColor, secondaryColor } = req.body;
-  
-    const userId1 = 1;
-    const userId2 = 2;
-  
-    const pieceTypes = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'];
-  
-    const savePiecesPromise = new Promise((resolve, reject) => {
-      const queries = [];
-  
-      pieceTypes.forEach((type, index) => {
-        const promise = new Promise((resolve, reject) => {
-          db.query(
-            "INSERT INTO pieces (Type) VALUES (?)",
-            [type],
-            (error, result) => {
-              if (error) {
-                console.error(error);
-                reject("Erreur lors de la création des pièces");
-              } else {
-                const pieceId = result.insertId;
-                const position = index;
-  
-                db.query(
-                  "INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position) VALUES (?, ?, ?, ?, ?)",
-                  [userId1, pieceId, primaryColor+"/"+secondaryColor, 'alive', position],
-                  (error) => {
-                    if (error) {
-                      console.error(error);
-                      reject("Erreur lors de la création des user-pieces");
-                    } else {
-                      db.query(
-                        "INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position) VALUES (?, ?, ?, ?, ?)",
-                        [userId2, pieceId, primaryColor+"/"+secondaryColor, 'alive', position + 8],
-                        (error) => {
-                          if (error) {
-                            console.error(error);
-                            reject("Erreur lors de la création des user-pieces");
-                          } else {
-                            resolve(`Pièce ${type} enregistrée avec succès pour les utilisateurs`);
-                          }
+const sharp = require('sharp');
+const fs = require('fs');
+
+// Endpoint pour sauvegarder les pièces avec traitement d'image
+app.post('/save-pieces', (req, res) => {
+  const { primaryColor, secondaryColor } = req.body;
+
+  const userId1 = 1;
+  const userId2 = 2;
+
+  const pieceTypes = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'];
+
+  const savePiecesPromise = new Promise((resolve, reject) => {
+    const queries = [];
+
+    pieceTypes.forEach((type, index) => {
+      const promise = new Promise((resolve, reject) => {
+        db.query(
+          'INSERT INTO pieces (Type) VALUES (?)',
+          [type],
+          (error, result) => {
+            if (error) {
+              console.error(error);
+              reject('Erreur lors de la création des pièces');
+            } else {
+              const pieceId = result.insertId;
+              const position = index;
+
+              const colorFilename = `${type}#${primaryColor.replace('#', '')}_${secondaryColor.replace('#', '')}.png`;
+              const outputPath = `../Art/${colorFilename}`;
+
+              // Utilisation de sharp pour traiter l'image
+              sharp(`../Art/${type}Skin.png`)
+                .resize(100, 100) // Redimensionner si nécessaire
+                .composite([{ input: Buffer.from([255, 255, 255]), raw: { width: 1, height: 1, channels: 3 } }])
+                .tint(primaryColor, { alpha: 1 })
+                .shadow({ blur: 5, sigma: 2, color: secondaryColor })
+                .toFile(outputPath, (err, info) => {
+                  if (err) {
+                    console.error(err);
+                    reject('Erreur lors du traitement de l\'image');
+                  } else {
+                    // Enregistrement des informations dans la base de données
+                    db.query(
+                      'INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position, Filename) VALUES (?, ?, ?, ?, ?, ?)',
+                      [userId1, pieceId, `${primaryColor}/${secondaryColor}`, 'alive', position, colorFilename],
+                      (error) => {
+                        if (error) {
+                          console.error(error);
+                          reject('Erreur lors de la création des user-pieces');
+                        } else {
+                          db.query(
+                            'INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position, Filename) VALUES (?, ?, ?, ?, ?, ?)',
+                            [userId2, pieceId, `${primaryColor}/${secondaryColor}`, 'alive', position + 8, colorFilename],
+                            (error) => {
+                              if (error) {
+                                console.error(error);
+                                reject('Erreur lors de la création des user-pieces');
+                              } else {
+                                resolve(`Pièce ${type} enregistrée avec succès pour les utilisateurs`);
+                              }
+                            }
+                          );
                         }
-                      );
-                    }
+                      }
+                    );
                   }
-                );
-              }
+                });
             }
-          );
-        });
-  
-        queries.push(promise);
+          }
+        );
       });
-  
-      Promise.all(queries)
-        .then(successMessages => {
-          resolve(successMessages.join(", "));
-        })
-        .catch(error => {
-          reject(error);
-        });
+
+      queries.push(promise);
     });
-  
-    savePiecesPromise
-      .then(successMessage => {
-        res.status(200).send(JSON.stringify(successMessage));
+
+    Promise.all(queries)
+      .then(successMessages => {
+        resolve(successMessages.join(', '));
       })
       .catch(error => {
-        console.error(error);
-        res.status(500).send("Erreur lors de l'enregistrement des pièces");
+        reject(error);
       });
+  });
+
+  savePiecesPromise
+    .then(successMessage => {
+      res.status(200).send(JSON.stringify(successMessage));
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send('Erreur lors de l\'enregistrement des pièces');
+    });
 });
+
 
 // Ajout du nouvel endpoint pour obtenir les pièces
 app.get('/get-pieces', (req, res) => {
