@@ -179,20 +179,20 @@ app.get('/get-pieces', (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
+  const { UserName, Password } = req.body; // Modifier ici
+  console.log('Received login request for UserName:', UserName); // Modifier ici
 
   // Recherche de l'utilisateur dans la base de données
-  db.query('SELECT * FROM user WHERE username = ?', [username], (error, results) => {
+  db.query('SELECT * FROM user WHERE UserName = ?', [UserName], (error, results) => { // Modifier ici
     if (error) {
-      console.error(error);
+      console.error('Database error:', error);
       res.status(500).json({ success: false, message: 'Erreur lors de la recherche de l\'utilisateur' });
     } else {
       if (results.length > 0) {
         const user = results[0];
-        // Comparaison du mot de passe hashé (dans la vraie application, utilisez bcrypt ou une méthode similaire)
-        if (password === user.password) {
-          // Génération du token JWT (exemple simple, dans la vraie application, utilisez une bibliothèque comme jsonwebtoken)
-          const token = 'fake-jwt-token'; // Remplacer par la vraie génération de token JWT
+        // Comparaison du mot de passe (remplacez par une méthode sécurisée dans une application réelle)
+        if (Password === user.Password) { // Modifier ici
+          const token = 'fake-jwt-token'; // Génération du token JWT (à remplacer par une méthode réelle)
           res.status(200).json({ success: true, token });
         } else {
           res.status(401).json({ success: false, message: 'Mot de passe incorrect' });

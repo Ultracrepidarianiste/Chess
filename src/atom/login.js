@@ -6,14 +6,29 @@ const Login = ({ setLoggedIn }) => {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simuler la vérification des identifiants
-    if (username === 'user' && password === 'password') {
-      localStorage.setItem('token', 'fake-jwt-token'); // Stocker un token fictif dans localStorage
+
+    try {
+      const response = await fetch('http://localhost:8000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ UserName: username, Password: password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message);
+      }
+
+      const data = await response.json();
+      localStorage.setItem('token', data.token); // Stocker le token JWT dans localStorage
       setLoggedIn(true);
       navigate('/color'); // Rediriger vers la page de jeu
-    } else {
+    } catch (error) {
+      console.error('Login error:', error.message);
       alert('Invalid credentials');
     }
   };

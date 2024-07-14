@@ -1,13 +1,13 @@
 import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 
-const PrivateRoute = ({ element: Component, ...rest }) => {
+const PrivateRoute = ({ element: Element, ...rest }) => {
   const isLoggedIn = !!localStorage.getItem('token');
 
   return (
     <Route
       {...rest}
-      element={isLoggedIn ? <Component /> : <Navigate to="/" />}
+      element={isLoggedIn ? <Element /> : <Navigate to="/" replace />}
     />
   );
 };
