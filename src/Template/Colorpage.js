@@ -24,16 +24,15 @@ const ColorPage = () => {
   };
 
   const savePiecesAndNavigate = () => {
-    const userId = 1; // Utilisez l'ID de l'utilisateur actuel ici
-
-    console.log("Sending data to the API:", { userId, primaryColor, secondaryColor });
+    const token = 'fake-jwt-token'; // Récupérer le token JWT depuis localStorage
 
     fetch('http://localhost:8000/save-pieces', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // Envoyer le token dans l'en-tête Authorization
       },
-      body: JSON.stringify({ userId, primaryColor, secondaryColor }),
+      body: JSON.stringify({ primaryColor, secondaryColor }),
     })
       .then(response => {
         if (response.ok) {
@@ -48,10 +47,10 @@ const ColorPage = () => {
       })
       .catch(error => {
         console.error('Erreur:', error);
+        alert('Erreur lors de l\'enregistrement des pièces');
       });
   };
 
-  // Fonction utilitaire pour convertir une couleur hexadécimale en RGB
   const hexToRgb = (hex) => {
     const bigint = parseInt(hex.slice(1), 16);
     return {
@@ -61,7 +60,6 @@ const ColorPage = () => {
     };
   };
 
-  // Fonction pour créer une image de pièce colorée
   const createPieceImage = (src, alt, primaryColor, secondaryColor) => {
     return (
       <div style={{ position: 'relative', display: 'inline-block' }}>

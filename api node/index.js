@@ -3,6 +3,8 @@ const cors = require('cors');
 const mysql = require('mysql');
 const sharp = require('sharp');
 const fs = require('fs');
+const verifyToken = require('../middlewares/VerifyToken');
+
 
 const app = express();
 const port = 8000;
@@ -25,9 +27,9 @@ db.connect((error) => {
 });
 
 
-app.post('/save-pieces', (req, res) => {
+app.post('/save-pieces', verifyToken, (req, res) => {
   const { primaryColor, secondaryColor } = req.body;
-  const userId = 1; // Utilisateur 1 pour toutes les pièces
+  const userId = req.user.id; // Utilisez l'identifiant de l'utilisateur loggé
 
   const pieceTypes = [
     { type: 'pawn', count: 8 },
@@ -167,6 +169,7 @@ app.post('/save-pieces', (req, res) => {
 });
 
 
+
 app.get('/get-pieces', (req, res) => {
   db.query('SELECT p.ID, p.Type, up.Color, up.Status, up.Position FROM pieces p JOIN `user-piece` up ON p.ID = up.Piece_ID', (error, results) => {
     if (error) {
@@ -179,20 +182,20 @@ app.get('/get-pieces', (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-  const { UserName, Password } = req.body; // Modifier ici
-  console.log('Received login request for UserName:', UserName); // Modifier ici
+  const { UserName, Password } = req.body; 
+  console.log('Received login request for UserName:', UserName); 
 
   // Recherche de l'utilisateur dans la base de données
-  db.query('SELECT * FROM user WHERE UserName = ?', [UserName], (error, results) => { // Modifier ici
+  db.query('SELECT * FROM user WHERE UserName = ?', [UserName], (error, results) => { 
     if (error) {
       console.error('Database error:', error);
       res.status(500).json({ success: false, message: 'Erreur lors de la recherche de l\'utilisateur' });
     } else {
       if (results.length > 0) {
         const user = results[0];
-        // Comparaison du mot de passe (remplacez par une méthode sécurisée dans une application réelle)
+        
         if (Password === user.Password) { // Modifier ici
-          const token = 'fake-jwt-token'; // Génération du token JWT (à remplacer par une méthode réelle)
+          const token = 'fake-jwt-token'; 
           res.status(200).json({ success: true, token });
         } else {
           res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
