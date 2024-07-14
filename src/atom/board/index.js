@@ -21,14 +21,23 @@ const Board = () => {
 
   // Fonction pour obtenir l'image d'une pièce en fonction de son type
   const getPieceImage = (type, Color) => {
-    // Vérification de la nullité ou de l'undefined de Color
     if (!Color) {
       return null;
     }
   
-    // Utilisation de l'objet contenant toutes les images importées
-    const colorFilename = `${type}${Color.replace('/', '-')}.png`; // Utilisation de '-' pour remplacer '/'
-    return usableArtImages[colorFilename] || null;
+    const adjustedColor = Color.replace('/', '-'); // Assurez-vous du bon remplacement
+    const colorFilename = `${type}${adjustedColor}.png`;
+  
+    console.log('Recherche de l\'image:', colorFilename); // Ajoutez un console log pour vérifier le nom de fichier recherché
+  
+    const image = usableArtImages[colorFilename];
+    if (image) {
+      console.log('Image trouvée:', image); // Ajoutez un console log pour confirmer que l'image est trouvée
+    } else {
+      console.log('Image non trouvée pour:', colorFilename); // Ajoutez un console log pour indiquer que l'image n'est pas trouvée
+    }
+  
+    return image || null;
   };
   
 
@@ -86,17 +95,18 @@ const Board = () => {
                 style={style}
               >
                 <img
-                  src={getPieceImage(piece.Type)}
-                  alt={piece.Type}
-                  className="piece"
-                  style={{
-                    filter: `drop-shadow(0 0 0 ${primaryColor})`,
-                    boxShadow: `0 0 10px ${secondaryColor}`,
-                    background: 'none', // Supprime le fond par défaut de l'image
-                    width: '100%', // Ajustement de la taille de l'image
-                    height: '100%',
-                  }}
-                />
+  src={process.env.PUBLIC_URL + getPieceImage(piece.Type, piece.Color)}
+  alt={piece.Type}
+  className="piece"
+  style={{
+    filter: `drop-shadow(0 0 0 ${primaryColor})`,
+    boxShadow: `0 0 10px ${secondaryColor}`,
+    background: 'none',
+    width: '100%', // Ajustement de la taille de l'image
+    height: '100%',
+  }}
+/>
+
               </div>
             );
           })}

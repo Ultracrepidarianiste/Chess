@@ -27,9 +27,9 @@ db.connect((error) => {
 });
 
 
-app.post('/save-pieces', verifyToken, (req, res) => {
+app.post('/save-pieces', (req, res) => {
   const { primaryColor, secondaryColor } = req.body;
-  const userId = req.user.id; // Utilisez l'identifiant de l'utilisateur loggé
+  const userId = 1; // Utilisation de l'UserId 1 de manière statique
 
   const pieceTypes = [
     { type: 'pawn', count: 8 },
@@ -122,7 +122,8 @@ app.post('/save-pieces', verifyToken, (req, res) => {
                 reject(`Erreur lors de la création des pièces de type ${pieceType.type}`);
               } else {
                 const pieceId = result.insertId;
-                const colorFilename = `${pieceType.type}#${primaryColor.replace('#', '')}_${secondaryColor.replace('#', '')}.png`;
+                const colorFilename = `${pieceType.type}#${primaryColor.replace('#', '')}_#${secondaryColor.replace('#', '')}.png`;
+                console.log('Nom de fichier généré:', colorFilename);
                 const outputPath = `../src/UsableArt/${colorFilename}`;
 
                 // Utilisation de sharp pour traiter l'image
@@ -167,6 +168,7 @@ app.post('/save-pieces', verifyToken, (req, res) => {
       });
   });
 });
+
 
 
 
