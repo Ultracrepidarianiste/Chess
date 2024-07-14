@@ -1,45 +1,44 @@
 /* src/Template/ColorPage.css */
 .color-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-  }
-  
-  .color-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 20px;
-  }
-  
-  .color-button {
-    width: 80px;
-    height: 80px;
-    margin: 10px;
-    border: none;
-    cursor: pointer;
-    color: white;
-    font-weight: bold;
-    border-radius: 10px;
-  }
-  
-  .piece-preview {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-  }
-  
-  .piece-preview img {
-    width: 100px;
-    height: 100px;
-    margin: 10px;
-  }
-  
-  .play-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.color-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.color-button {
+  width: 80px;
+  height: 80px;
+  margin: 10px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+  border-radius: 10px;
+}
+
+.piece-preview {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.piece-preview img {
+  width: 100px;
+  height: 100px;
+  margin: 10px;
+}
+
+.play-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}

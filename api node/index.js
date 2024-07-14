@@ -1,8 +1,8 @@
-// index.js dans le dossier "api"
-
-const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql");
+const express = require('express');
+const cors = require('cors');
+const mysql = require('mysql');
+const sharp = require('sharp');
+const fs = require('fs');
 
 const app = express();
 const port = 8000;
@@ -24,122 +24,149 @@ db.connect((error) => {
     console.log("Connexion à la BDD réussie");
 });
 
-// Endpoint pour réinitialiser les pièces
-app.delete("/reset-pieces", (req, res) => {
-    db.query("DELETE FROM `user-piece`", (error, result) => {
-        if (error) {
-            console.error(error);
-            res.status(500).send("Erreur lors de la suppression des user-piece");
-            return;
-        }
-        db.query("DELETE FROM pieces", (error, result) => {
-            if (error) {
-                console.error(error);
-                res.status(500).send("Erreur lors de la suppression des pièces");
-                return;
-            }
-            res.status(200).send("Toutes les pièces ont été supprimées avec succès");
-        });
-    });
-});
 
-const sharp = require('sharp');
-const fs = require('fs');
-
-// Endpoint pour sauvegarder les pièces avec traitement d'image
 app.post('/save-pieces', (req, res) => {
   const { primaryColor, secondaryColor } = req.body;
+  const userId = 1; // Utilisateur 1 pour toutes les pièces
 
-  const userId1 = 1;
-  const userId2 = 2;
+  const pieceTypes = [
+    { type: 'pawn', count: 8 },
+    { type: 'rook', count: 2 },
+    { type: 'knight', count: 2 },
+    { type: 'bishop', count: 2 },
+    { type: 'queen', count: 1 },
+    { type: 'king', count: 1 }
+  ];
 
-  const pieceTypes = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'];
-
-  const savePiecesPromise = new Promise((resolve, reject) => {
-    const queries = [];
-
-    pieceTypes.forEach((type, index) => {
-      const promise = new Promise((resolve, reject) => {
-        db.query(
-          'INSERT INTO pieces (Type) VALUES (?)',
-          [type],
-          (error, result) => {
-            if (error) {
-              console.error(error);
-              reject('Erreur lors de la création des pièces');
-            } else {
-              const pieceId = result.insertId;
-              const position = index;
-
-              const colorFilename = `${type}#${primaryColor.replace('#', '')}_${secondaryColor.replace('#', '')}.png`;
-              const outputPath = `../Art/${colorFilename}`;
-
-              // Utilisation de sharp pour traiter l'image
-              sharp(`../Art/${type}Skin.png`)
-                .resize(100, 100) // Redimensionner si nécessaire
-                .composite([{ input: Buffer.from([255, 255, 255]), raw: { width: 1, height: 1, channels: 3 } }])
-                .tint(primaryColor, { alpha: 1 })
-                .shadow({ blur: 5, sigma: 2, color: secondaryColor })
-                .toFile(outputPath, (err, info) => {
-                  if (err) {
-                    console.error(err);
-                    reject('Erreur lors du traitement de l\'image');
-                  } else {
-                    // Enregistrement des informations dans la base de données
-                    db.query(
-                      'INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position, Filename) VALUES (?, ?, ?, ?, ?, ?)',
-                      [userId1, pieceId, `${primaryColor}/${secondaryColor}`, 'alive', position, colorFilename],
-                      (error) => {
-                        if (error) {
-                          console.error(error);
-                          reject('Erreur lors de la création des user-pieces');
-                        } else {
-                          db.query(
-                            'INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position, Filename) VALUES (?, ?, ?, ?, ?, ?)',
-                            [userId2, pieceId, `${primaryColor}/${secondaryColor}`, 'alive', position + 8, colorFilename],
-                            (error) => {
-                              if (error) {
-                                console.error(error);
-                                reject('Erreur lors de la création des user-pieces');
-                              } else {
-                                resolve(`Pièce ${type} enregistrée avec succès pour les utilisateurs`);
-                              }
-                            }
-                          );
-                        }
-                      }
-                    );
-                  }
-                });
-            }
-          }
-        );
-      });
-
-      queries.push(promise);
+  // Promesse pour vérifier si la table `pieces` est vide
+  const checkPiecesTablePromise = new Promise((resolve, reject) => {
+    db.query('SELECT COUNT(*) as count FROM pieces', (error, results) => {
+      if (error) {
+        console.error(error);
+        reject('Erreur lors de la vérification de la base de données');
+      } else {
+        const isEmpty = results[0].count === 0;
+        resolve(isEmpty);
+      }
     });
-
-    Promise.all(queries)
-      .then(successMessages => {
-        resolve(successMessages.join(', '));
-      })
-      .catch(error => {
-        reject(error);
-      });
   });
 
-  savePiecesPromise
-    .then(successMessage => {
-      res.status(200).send(JSON.stringify(successMessage));
-    })
-    .catch(error => {
-      console.error(error);
-      res.status(500).send('Erreur lors de l\'enregistrement des pièces');
+  // Promesse pour insérer les pièces dans la base de données
+  checkPiecesTablePromise.then(isEmpty => {
+    const savePiecesPromises = [];
+
+    pieceTypes.forEach(pieceType => {
+      for (let i = 0; i < pieceType.count; i++) {
+        let position = null;
+
+        if (isEmpty) {
+          switch (pieceType.type) {
+            case 'pawn':
+              position = i + 48;
+              break;
+            case 'rook':
+              position = i === 0 ? 56 : 63;
+              break;
+            case 'knight':
+              position = i === 0 ? 57 : 62;
+              break;
+            case 'bishop':
+              position = i === 0 ? 58 : 61;
+              break;
+            case 'queen':
+              position = 59;
+              break;
+            case 'king':
+              position = 60;
+              break;
+            default:
+              position = null;
+              break;
+          }
+        } else {
+          switch (pieceType.type) {
+            case 'pawn':
+              position = i + 8;
+              break;
+            case 'rook':
+              position = i === 0 ? 0 : 7;
+              break;
+            case 'knight':
+              position = i === 0 ? 1 : 6;
+              break;
+            case 'bishop':
+              position = i === 0 ? 2 : 5;
+              break;
+            case 'queen':
+              position = 3;
+              break;
+            case 'king':
+              position = 4;
+              break;
+            default:
+              position = null;
+              break;
+          }
+        }
+
+        // Création de la promesse pour chaque insertion de pièce
+        const savePiecePromise = new Promise((resolve, reject) => {
+          db.query(
+            'INSERT INTO pieces (Type) VALUES (?)',
+            [pieceType.type],
+            (error, result) => {
+              if (error) {
+                console.error(error);
+                reject(`Erreur lors de la création des pièces de type ${pieceType.type}`);
+              } else {
+                const pieceId = result.insertId;
+                const colorFilename = `${pieceType.type}#${primaryColor.replace('#', '')}_${secondaryColor.replace('#', '')}.png`;
+                const outputPath = `../src/UsableArt/${colorFilename}`;
+
+                // Utilisation de sharp pour traiter l'image
+                sharp(`../src/Art/${pieceType.type}Skin.png`)
+                  .tint(primaryColor)  // Utilisez .tint pour ajouter la couleur principale
+                  .toFile(outputPath, (err, info) => {
+                    if (err) {
+                      console.error(err);
+                      reject(`Erreur lors du traitement de l'image pour la pièce ${pieceType.type}`);
+                    } else {
+                      db.query(
+                        'INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position) VALUES (?, ?, ?, ?, ?)',
+                        [userId, pieceId, `${primaryColor}_${secondaryColor}`, 'alive', position],
+                        (error) => {
+                          if (error) {
+                            console.error(error);
+                            reject(`Erreur lors de la création des user-pieces pour la pièce ${pieceType.type}`);
+                          } else {
+                            resolve(`Pièce ${pieceType.type} enregistrée avec succès`);
+                          }
+                        }
+                      );
+                    }
+                  });
+              }
+            }
+          );
+        });
+
+        savePiecesPromises.push(savePiecePromise);
+      }
     });
+
+    // Exécuter toutes les promesses d'insertion de pièces
+    Promise.all(savePiecesPromises)
+      .then(successMessages => {
+        res.status(200).json({ message: successMessages.join(', ') });
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).send('Erreur lors de l\'enregistrement des pièces');
+      });
+  });
 });
 
 
-// Ajout du nouvel endpoint pour obtenir les pièces
 app.get('/get-pieces', (req, res) => {
   db.query('SELECT p.ID, p.Type, up.Color, up.Status, up.Position FROM pieces p JOIN `user-piece` up ON p.ID = up.Piece_ID', (error, results) => {
     if (error) {
@@ -151,6 +178,53 @@ app.get('/get-pieces', (req, res) => {
   });
 });
 
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+
+  // Recherche de l'utilisateur dans la base de données
+  db.query('SELECT * FROM user WHERE username = ?', [username], (error, results) => {
+    if (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Erreur lors de la recherche de l\'utilisateur' });
+    } else {
+      if (results.length > 0) {
+        const user = results[0];
+        // Comparaison du mot de passe hashé (dans la vraie application, utilisez bcrypt ou une méthode similaire)
+        if (password === user.password) {
+          // Génération du token JWT (exemple simple, dans la vraie application, utilisez une bibliothèque comme jsonwebtoken)
+          const token = 'fake-jwt-token'; // Remplacer par la vraie génération de token JWT
+          res.status(200).json({ success: true, token });
+        } else {
+          res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
+        }
+      } else {
+        res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+      }
+    }
+  });
+});
+
+
 app.listen(port, () => {
     console.log(`Serveur démarré sur http://localhost:${port}`);
+});
+
+app.delete("/reset-pieces", (req, res) => {
+  // Supprimer d'abord toutes les entrées dans la table `user-piece`
+  db.query("DELETE FROM `user-piece`", (error, result) => {
+      if (error) {
+          console.error(error);
+          res.status(500).send("Erreur lors de la suppression des user-piece");
+          return;
+      }
+      // Ensuite, supprimer toutes les pièces de la table `pieces`
+      db.query("DELETE FROM pieces", (error, result) => {
+          if (error) {
+              console.error(error);
+              res.status(500).send("Erreur lors de la suppression des pièces");
+              return;
+          }
+          res.status(200).send("Toutes les pièces ont été supprimées avec succès");
+      });
+  });
 });

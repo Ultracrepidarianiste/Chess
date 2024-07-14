@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import './board.css';
-import PionSkin from '../../Art/PionSkin.png';
-import TowerSkin from '../../Art/TowerSkin.png';
-import HorseSkin from '../../Art/HorseSkin.png';
-import FouSkin from '../../Art/FouSkin.png';
-import QueenSkin from '../../Art/QueenSkin.png';
-import KingSkin from '../../Art/KingSkin.png';
+
+// Utilisation de require.context pour importer toutes les images d'un répertoire
+const usableArt = require.context('../../UsableArt', false, /\.(png)$/);
+const usableArtImages = usableArt.keys().reduce((acc, path) => {
+  acc[path.replace('./', '')] = usableArt(path);
+  return acc;
+}, {});
 
 const Board = () => {
   const [pieces, setPieces] = useState([]);
@@ -19,24 +20,17 @@ const Board = () => {
   }, []);
 
   // Fonction pour obtenir l'image d'une pièce en fonction de son type
-  const getPieceImage = (type) => {
-    switch (type) {
-      case 'pawn':
-        return PionSkin;
-      case 'rook':
-        return TowerSkin;
-      case 'knight':
-        return HorseSkin;
-      case 'bishop':
-        return FouSkin;
-      case 'queen':
-        return QueenSkin;
-      case 'king':
-        return KingSkin;
-      default:
-        return null;
+  const getPieceImage = (type, Color) => {
+    // Vérification de la nullité ou de l'undefined de Color
+    if (!Color) {
+      return null;
     }
+  
+    // Utilisation de l'objet contenant toutes les images importées
+    const colorFilename = `${type}${Color.replace('/', '-')}.png`; // Utilisation de '-' pour remplacer '/'
+    return usableArtImages[colorFilename] || null;
   };
+  
 
   // Fonction pour obtenir les couleurs à partir de la chaîne Color
   const getPieceColors = (colorString) => {
