@@ -56,6 +56,7 @@ app.post('/save-pieces', (req, res) => {
   // Promesse pour insérer les pièces dans la base de données
   checkPiecesTablePromise.then(isEmpty => {
     const savePiecesPromises = [];
+    const reversed = isEmpty ? true : false;
 
     pieceTypes.forEach(pieceType => {
       for (let i = 0; i < pieceType.count; i++) {
@@ -135,8 +136,8 @@ app.post('/save-pieces', (req, res) => {
                       reject(`Erreur lors du traitement de l'image pour la pièce ${pieceType.type}`);
                     } else {
                       db.query(
-                        'INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position) VALUES (?, ?, ?, ?, ?)',
-                        [userId, pieceId, `${primaryColor}_${secondaryColor}`, 'alive', position],
+                        'INSERT INTO `user-piece` (User_ID, Piece_ID, Color, Status, Position, Reversed) VALUES (?, ?, ?, ?, ?, ?)',
+                        [userId, pieceId, `${primaryColor}_${secondaryColor}`, 'alive', position, reversed],
                         (error) => {
                           if (error) {
                             console.error(error);
@@ -172,8 +173,9 @@ app.post('/save-pieces', (req, res) => {
 
 
 
+
 app.get('/get-pieces', (req, res) => {
-  db.query('SELECT p.ID, p.Type, up.Color, up.Status, up.Position FROM pieces p JOIN `user-piece` up ON p.ID = up.Piece_ID', (error, results) => {
+  db.query('SELECT p.ID, p.Type, up.Color, up.Status, up.Position, up.Reversed FROM pieces p JOIN `user-piece` up ON p.ID = up.Piece_ID', (error, results) => {
     if (error) {
       console.error(error);
       res.status(500).send('Erreur lors de la récupération des pièces');
@@ -182,6 +184,7 @@ app.get('/get-pieces', (req, res) => {
     res.json(results);
   });
 });
+
 
 app.post('/api/login', (req, res) => {
   const { UserName, Password } = req.body; 
@@ -231,5 +234,34 @@ app.delete("/reset-pieces", (req, res) => {
           }
           res.status(200).send("Toutes les pièces ont été supprimées avec succès");
       });
+  });
+});
+
+app.post('/update-piece', (req, res) => {
+  const { pieceId, newPosition } = req.body;
+
+  db.query(
+    'UPDATE `user-piece` SET Position = ? WHERE Piece_ID = ?',
+    [newPosition, pieceId],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Erreur lors de la mise à jour de la position de la pièce');
+        return;
+      }
+      res.status(200).send('Position de la pièce mise à jour avec succès');
+    }
+  );
+});
+app.post('/update-piece', (req, res) => {
+  const { pieceId, newPosition } = req.body;
+
+  db.query('UPDATE `user-piece` SET Position = ? WHERE Piece_ID = ?', [newPosition, pieceId], (error, result) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Erreur lors de la mise à jour de la position de la pièce');
+    } else {
+      res.status(200).send('Position de la pièce mise à jour avec succès');
+    }
   });
 });
