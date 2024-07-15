@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import './board.css';
 
-const usableArt = require.context('../../UsableArt', false, /\.(png)$/);
-const usableArtImages = usableArt.keys().reduce((acc, path) => {
-  acc[path.replace('./', '')] = usableArt(path);
+// Importer les images du dossier Art
+const art = require.context('../../Art', false, /\.(png)$/);
+const artImages = art.keys().reduce((acc, path) => {
+  acc[path.replace('./', '')] = art(path);
   return acc;
 }, {});
 
@@ -13,7 +14,6 @@ const Board = () => {
   const [validMoves, setValidMoves] = useState([]);
   const [currentTurn, setCurrentTurn] = useState('Non-Reversed'); // 'Non-Reversed' or 'Reversed'
   const [mouseOverPiecePosition, setMouseOverPiecePosition] = useState(null);
-  const [isMouseDown, setIsMouseDown] = useState(false); // état pour suivre si le clic est maintenu
 
   useEffect(() => {
     fetch('http://localhost:8000/get-pieces')
@@ -22,11 +22,9 @@ const Board = () => {
       .catch(error => console.error('Error fetching pieces:', error));
   }, []);
 
-  const getPieceImage = (type, color) => {
-    if (!color) return null;
-    const adjustedColor = color.replace('/', '-');
-    const colorFilename = `${type}${adjustedColor}.png`;
-    return usableArtImages[colorFilename] || null;
+  const getPieceImage = (type, reversed) => {
+    const imageName = reversed ? `${type}.png` : `${type}Skin.png`;
+    return artImages[imageName] || null;
   };
 
   const getPieceColors = (colorString) => {
@@ -284,9 +282,14 @@ const Board = () => {
   const handlePieceClick = (e, piece) => {
     e.stopPropagation();
   
-    if (selectedPiece && selectedPiece.ID === piece.ID) {
-      setSelectedPiece(null);
-      setValidMoves([]);
+    if (selectedPiece) {
+      if (selectedPiece.ID === piece.ID) {
+        setSelectedPiece(null);
+        setValidMoves([]);
+      } else if (validMoves.includes(piece.Position) && piece.Color !== selectedPiece.Color) {
+        // Capture the piece
+        movePiece(selectedPiece.ID, piece.Position, piece);
+      }
     } else {
       if ((piece.Reversed && currentTurn === 'Reversed') || (!piece.Reversed && currentTurn === 'Non-Reversed')) {
         setSelectedPiece(piece);
@@ -304,38 +307,8 @@ const Board = () => {
     }
   };
 
-  const handleMouseDown = (e, piece) => {
-    e.stopPropagation();
-    setIsMouseDown(true);
-    setSelectedPiece(piece);
-    const moves = getValidMoves(piece, piece.Position);
-    setValidMoves(moves);
-  };
-
-  const handleMouseUp = (e, squareNumber) => {
-    e.stopPropagation();
-    setIsMouseDown(false);
-    if (selectedPiece && validMoves.includes(squareNumber)) {
-      movePiece(selectedPiece.ID, squareNumber);
-    }
-    setSelectedPiece(null);
-    setValidMoves([]);
-  };
-
-  const handleMouseOverPiece = (piecePosition) => {
-    if (isMouseDown) {
-      setMouseOverPiecePosition(piecePosition);
-    }
-  };
-
-  const handleMouseOutPiece = () => {
-    if (isMouseDown) {
-      setMouseOverPiecePosition(null);
-    }
-  };
-
   const handleKeyDown = (e) => {
-    if (e.key === 'g' && mouseOverPiecePosition !== null && selectedPiece) {
+    if (e.key === 'g' && mouseOverPiecePosition !== null) {
       const capturedPiece = pieces.find(p => p.Position === mouseOverPiecePosition);
       if (capturedPiece) {
         movePiece(selectedPiece.ID, mouseOverPiecePosition, capturedPiece);
@@ -372,10 +345,18 @@ const Board = () => {
       .catch(error => console.error('Erreur:', error));
   };
 
+  const handleMouseOverPiece = (piecePosition) => {
+    setMouseOverPiecePosition(piecePosition);
+  };
+
+  const handleMouseOutPiece = () => {
+    setMouseOverPiecePosition(null);
+  };
+
   const squareSize = 50;
 
   return (
-    <div className="board" tabIndex="0" onKeyDown={handleKeyDown}>
+    <div className="board" onClick={() => { setSelectedPiece(null); setValidMoves([]); }}>
       {Array.from({ length: 8 }, (_, rowIndex) => (
         <div key={rowIndex} className="row">
           {Array.from({ length: 8 }, (_, colIndex) => {
@@ -396,12 +377,10 @@ const Board = () => {
                 className={`square ${(rowIndex + colIndex) % 2 === 1 ? 'black' : 'white'}`}
                 style={style}
                 onClick={() => handleSquareClick(squareNumber)}
-                onMouseDown={(e) => handleMouseDown(e, piece)}
-                onMouseUp={(e) => handleMouseUp(e, squareNumber)}
               >
                 {piece && (
                   <img
-                    src={getPieceImage(piece.Type, piece.Color)}
+                    src={process.env.PUBLIC_URL + getPieceImage(piece.Type, piece.Reversed)}
                     alt={piece.Type}
                     className="piece"
                     onClick={(e) => handlePieceClick(e, piece)}
